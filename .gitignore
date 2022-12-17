@@ -1,3 +1,5 @@
 paper/
 dataset/
 .idea/
+**/__pycache__/
+trials/
