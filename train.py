@@ -9,6 +9,7 @@ import numpy as np
 from torch import nn
 from sklearn.metrics import accuracy_score, f1_score
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 
 os.makedirs('saved_models', exist_ok=True)
@@ -25,7 +26,7 @@ parser.add_argument('-m', '--model_name', type=str, default='saved_models', help
                                                                                  'saved_models folder')
 parser.add_argument('-rn', '--run_name', type=str, required=True, help='Enter run name for folders and models')
 parser.add_argument('-r', '--run_num', type=int, default=len(os.listdir('saved_models')), help='Trial Run Number')
-parser.add_argument('-o', '--optim', type=str, default='Adam', help='Which Optim to use, "Adam" or "SGD')
+parser.add_argument('-o', '--optim', type=str, default='SGD', help='Which Optim to use, "Adam" or "SGD')
 
 opt = vars(parser.parse_args())
 
@@ -33,7 +34,7 @@ print('\n======================================================================\
 print(opt)
 print('\n======================================================================\n')
 
-if opt['tt'] == 'l':
+if opt['train_type'] == 'l':
     train_path = join(opt['data_path'], 'l_train')
 elif opt['tt'] == 'u':
     # I don't know what this means now, bs 3mla l condition
@@ -72,13 +73,16 @@ if opt['load_saved_model'] == 'y':
     optimizer.load_state_dict(checkpoint['optim_state'])
     print('\n<<Done loading model & optimizer>>\n')
 
-experiment_name = opt['run_name'] + '-' + str(opt['run_num'])
+experiment_name = opt['run_name'] + '_' + str(opt['run_num'])
 new_model_name = join(model_path,  experiment_name + '.pt')
 plots_folder = join('plots', experiment_name)
 os.makedirs(plots_folder, exist_ok=True)
 
-criterion = nn.CrossEntropyLoss().to(device)
-softmax = nn.Softmax(dim=-1)
+cls_weight = [1.0 for c in range(n_classes)]
+cls_weight = torch.tensor(cls_weight, dtype=torch.float).cuda()
+criterion = nn.CrossEntropyLoss(weight=cls_weight, ignore_index=-1).to(device)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=opt['n_epochs'])
+
 
 train_loss = []
 val_loss = []
@@ -110,7 +114,7 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
         for inputs, labels in datasets[phase]:
             inputs = inputs.to(device)
             labels = labels.long().squeeze().to(device)
-            labels = labels.reshape(-1, 1)
+            # labels = labels.reshape(-1, 1)
 
             with torch.set_grad_enabled(phase == 'train'):
                 outputs = model(inputs).squeeze()
@@ -130,19 +134,19 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
                             calc_bef = True
 
                 if phase == 'train' and calc_bef:
-                    print('optimizing')
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
+                    scheduler.step()
 
             running_loss += loss.item() * inputs.size(0)
 
-            preds = torch.max(outputs, dim=-1)
-
+            preds, pred_labels = F.softmax(outputs, 1).max(1)
+            
             y_trues = np.append(y_trues, labels.data.cpu().numpy())
-            y_preds = np.append(y_preds, preds.indices.cpu())
+            y_preds = np.append(y_preds, labels.data.cpu().numpy())
 
-        epoch_loss = running_loss / dataset_sizes[phase]
+        epoch_loss = running_loss / len(datasets[phase].sampler)
         acc = accuracy_score(y_trues, y_preds)
         f1 = f1_score(y_trues, y_preds, average='weighted')
 
