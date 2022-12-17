@@ -1,4 +1,4 @@
-from models.ViTCN import ViTCN
+from models.ViT import ViT
 from utils import get_test_dataloader
 from os.path import join
 import os
@@ -30,7 +30,7 @@ data_size = len(dataloader.dataset)
 print("Number of data:", data_size)
 
 model_path = 'saved_models'
-model = ViTCN(use_cuda).to(device)
+model = ViT(use_cuda).to(device)
 model_name = join(model_path, opt.model_name)
 checkpoint = torch.load(model_name)
 model.load_state_dict(checkpoint['model_state'])

@@ -1,4 +1,4 @@
-from models.ViTCN import ViTCN
+from models.ViT import ViT
 from utils import get_t_v_dataloaders, EarlyStopping
 from os.path import join
 import os
@@ -44,7 +44,8 @@ else:
 val_path = join(opt['data_path'], 'val')
 
 datasets = get_t_v_dataloaders(opt['batch_size'], train_path, val_path)
-n_classes = datasets['train_classes']
+classes = datasets['classes']
+n_classes = len(classes)
 dataset_sizes = {x: len(datasets[x].dataset) for x in ['train', 'validation']}
 
 torch.manual_seed(0)
@@ -56,7 +57,7 @@ model_path = 'saved_models'
 freeze = False
 pretrained = True
 
-model = ViTCN(use_cuda, pretrained, freeze).to(device)
+model = ViT(use_cuda, n_classes, pretrained, freeze).to(device)
 if opt['optim'] == 'Adam':
     optimizer = optim.Adam(model.parameters(), lr=opt['learning_rate'])
 elif opt['optim'] == 'SGD':
@@ -137,11 +138,9 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
             running_loss += loss.item() * inputs.size(0)
 
             preds = torch.max(outputs, dim=-1)
-            # preds = outputs.reshape(-1).detach().cpu().numpy().round()
 
             y_trues = np.append(y_trues, labels.data.cpu().numpy())
             y_preds = np.append(y_preds, preds.indices.cpu())
-            # y_preds = np.append(y_preds, preds)
 
         epoch_loss = running_loss / dataset_sizes[phase]
         acc = accuracy_score(y_trues, y_preds)
