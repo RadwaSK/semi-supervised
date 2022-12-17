@@ -1,4 +1,4 @@
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler
 from torchvision.transforms import transforms
 from torchvision import datasets
 
@@ -12,11 +12,17 @@ def get_t_v_dataloaders(batch_size, train_data_root, val_data_root):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    train_dataset = datasets.ImageFolder(train_data_root, transform=transform)
-    val_dataset = datasets.ImageFolder(val_data_root, transform=transform)
+    val_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
 
-    return {'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4),
-            'validation': DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4),
+    train_dataset = datasets.ImageFolder(train_data_root, transform=transform)
+    val_dataset = datasets.ImageFolder(val_data_root, transform=val_transform)
+
+    return {'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True),
+            'validation': DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True),
             'classes': train_dataset.classes}
 
 
