@@ -1,6 +1,7 @@
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 from torchvision import datasets
+from InferenceDataset import InferenceDataset
 
 
 def get_t_v_dataloaders(batch_size, train_data_root, val_data_root):
@@ -28,12 +29,13 @@ def get_t_v_dataloaders(batch_size, train_data_root, val_data_root):
 
 def get_test_dataloader(batch_size, test_data_root):
     transform = transforms.Compose([
-        transforms.Resize((256, 256)),
+        transforms.ToPILImage(),
         transforms.ToTensor(),
+        transforms.Resize((224, 224)),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    test_dataset = datasets.ImageFolder(test_data_root, transform=transform)
+    test_dataset = InferenceDataset(test_data_root, transform=transform)
 
     return DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 

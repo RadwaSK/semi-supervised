@@ -91,8 +91,8 @@ val_f1 = []
 train_acc = []
 val_acc = []
 
-tolerance = 5
-min_delta = 0.3
+tolerance = 10
+min_delta = 0.5
 early_stopping = EarlyStopping(tolerance=tolerance, min_delta=min_delta)
 finish = False
 
@@ -142,9 +142,9 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
             running_loss += loss.item() * inputs.size(0)
 
             preds, pred_labels = F.softmax(outputs, 1).max(1)
-            
+
             y_trues = np.append(y_trues, labels.data.cpu().numpy())
-            y_preds = np.append(y_preds, labels.data.cpu().numpy())
+            y_preds = np.append(y_preds, pred_labels.data.cpu().numpy())
 
         epoch_loss = running_loss / len(datasets[phase].sampler)
         acc = accuracy_score(y_trues, y_preds)
@@ -173,8 +173,8 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
         print('\nF1 Score:\t' + str(f1))
         print('\nAccuracy: \t' + str(acc))
 
-    if finish:
-        break
+    # if finish:
+    #     break
 
 
 # plotting

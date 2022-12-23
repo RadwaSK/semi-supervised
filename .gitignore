@@ -3,3 +3,5 @@ dataset/
 .idea/
 **/__pycache__/
 trials/
+plots/
+saved_models/
