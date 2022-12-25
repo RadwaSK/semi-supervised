@@ -1,10 +1,10 @@
 from models.ViT import ViT
-from utils import get_test_dataloader
+from utils import get_inference_dataloader
 from os.path import join
 import os
+import pickle
 import argparse
 import torch
-import numpy as np
 import shutil
 import torch.nn.functional as F
 
@@ -22,7 +22,11 @@ opt = parser.parse_args()
 
 test_path = join(opt.data_path, opt.input_folder)
 
-dataloader = get_test_dataloader(opt.batch_size, test_path)
+with open('class_to_indx.pkl', 'rb') as f:
+    class_to_indx = pickle.load(f)
+indx_to_class = {class_to_indx[k]: k for k in class_to_indx.keys()}
+
+dataloader = get_inference_dataloader(opt.batch_size, test_path)
 
 torch.manual_seed(0)
 use_cuda = torch.cuda.is_available()
@@ -49,11 +53,12 @@ for inputs, paths in dataloader:
     outputs = model(inputs).squeeze()
 
     preds, pred_labels = F.softmax(outputs, 1).max(1)
+
     preds = preds.data.cpu().numpy()
     pred_labels = pred_labels.data.cpu().numpy()
     for i in range(opt.batch_size):
         if preds.data[i] > 0.7:
-            folder = join(predicted_folder, str(pred_labels[i]))
+            folder = join(predicted_folder, str(indx_to_class[pred_labels[i]]))
             os.makedirs(folder, exist_ok=True)
             print('Moving image: ', paths[i][paths[i].rfind('/'):])
             shutil.move(paths[i], folder)

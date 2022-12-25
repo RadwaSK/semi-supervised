@@ -15,11 +15,11 @@ parser.add_argument('-dp', '--data_path', type=str, default='dataset', help='pat
 parser.add_argument('-b', '--batch_size', type=int, default=4, help='batch size for data')
 parser.add_argument('-m', '--model_name', type=str, required=True, help='enter name of model to test from '
                                                                         'models in saved_models')
-parser.add_argument('-f', '--folder', type=str, default='val', help='folder name that includes data for testing')
+parser.add_argument('-f', '--folder', type=str, default='test', help='folder name that includes data for testing')
 
 opt = parser.parse_args()
 
-test_path = join(opt.data_path, opt['folder'])
+test_path = join(opt.data_path, opt.folder)
 
 dataloader, classes = get_test_dataloader(opt.batch_size, test_path)
 classes_num = len(classes)

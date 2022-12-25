@@ -63,6 +63,8 @@ if opt['optim'] == 'Adam':
     optimizer = optim.Adam(model.parameters(), lr=opt['learning_rate'])
 elif opt['optim'] == 'SGD':
     optimizer = optim.SGD(model.parameters(), lr=opt['learning_rate'])
+elif opt['optim'] == 'AdamW':
+    optimizer = optim.AdamW(model.parameters(), lr=opt['learning_rate'])
 else:
     raise 'Enter a valid optimizer name'
 
@@ -83,7 +85,6 @@ cls_weight = torch.tensor(cls_weight, dtype=torch.float).cuda()
 criterion = nn.CrossEntropyLoss(weight=cls_weight, ignore_index=-1).to(device)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=opt['n_epochs'])
 
-
 train_loss = []
 val_loss = []
 train_f1 = []
@@ -91,7 +92,7 @@ val_f1 = []
 train_acc = []
 val_acc = []
 
-tolerance = 10
+tolerance = 3
 min_delta = 0.5
 early_stopping = EarlyStopping(tolerance=tolerance, min_delta=min_delta)
 finish = False
@@ -128,9 +129,9 @@ for epoch in range(opt['st_epoch'], opt['st_epoch'] + opt['n_epochs']):
                         real = torch.squeeze(labels[indices], dim=1)
                         predicted = torch.squeeze(outputs[indices], dim=1)
                         if calc_bef:
-                            loss += torch.mul(criterion(predicted, real), len(real) / opt['batch_size'])
+                            loss += torch.mul(criterion(predicted, real), 1.0 / len(real))
                         else:
-                            loss = torch.mul(criterion(predicted, real), len(real) / opt['batch_size'])
+                            loss = torch.mul(criterion(predicted, real), 1.0 / len(real))
                             calc_bef = True
 
                 if phase == 'train' and calc_bef:
