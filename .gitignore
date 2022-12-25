@@ -5,3 +5,4 @@ dataset/
 trials/
 plots/
 saved_models/
+**/*.txt
