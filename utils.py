@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 from torchvision import datasets
 from InferenceDataset import InferenceDataset
+from unlabeledClass import utrainDataset
 import pickle
 
 
@@ -56,6 +57,22 @@ def get_test_dataloader(batch_size, test_data_root):
         test_dataset.classes
 
 
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
+    return lst3
+
+def get_inference_dataloader_v2(batch_size, test_data_root, ps_unlabeled_set, ps_labels):
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor(),
+        transforms.Resize((224, 224)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    dataset = utrainDataset(test_data_root, transform=transform, unlabeled_set = ps_unlabeled_set, ps_labels = ps_labels)
+
+    return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
 ## EarlyStopping class used for stopping the model early while training
 class EarlyStopping:
     def __init__(self, tolerance=5, min_delta=0.1):
@@ -71,4 +88,3 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.counter = 0
-
